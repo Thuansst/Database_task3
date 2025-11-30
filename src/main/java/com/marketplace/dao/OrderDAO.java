@@ -1,0 +1,80 @@
+package com.marketplace.dao;
+
+import com.marketplace.config.DatabaseConnection;
+import com.marketplace.model.Order;
+import java.sql.*;
+
+public class OrderDAO {
+
+    /**
+     * INSERT: Thêm mới đơn hàng
+     * Gọi SP: sp_InsertOrder(BuyerID, OrderPrice, Status, PaymentID)
+     */
+    public boolean insertOrder(Order order) {
+        // Câu lệnh gọi Stored Procedure trong MySQL
+        String query = "{CALL sp_InsertOrder(?, ?, ?, ?)}";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             CallableStatement stmt = conn.prepareCall(query)) {
+
+            // Tham số 1: BuyerID (Lấy từ model)
+            stmt.setInt(1, order.getBuyerId());
+
+            // Tham số 2: OrderPrice
+            stmt.setInt(2, order.getOrderPrice());
+
+            // Tham số 3: Status
+            stmt.setString(3, order.getStatus());
+
+            // Tham số 4: PaymentID (Xử lý trường hợp null)
+            if (order.getPaymentId() != null && order.getPaymentId() > 0) {
+                stmt.setInt(4, order.getPaymentId());
+            } else {
+                stmt.setNull(4, java.sql.Types.INTEGER);
+            }
+
+            // Thực thi lệnh. Nếu số dòng bị ảnh hưởng > 0 là thành công
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi Insert Order: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * UPDATE: Cập nhật đơn hàng
+     * Gọi SP: sp_UpdateOrder(OrderID, OrderPrice, Status, PaymentID)
+     */
+    public boolean updateOrder(Order order) {
+        String query = "{CALL sp_UpdateOrder(?, ?, ?, ?)}";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             CallableStatement stmt = conn.prepareCall(query)) {
+
+            // Tham số 1: OrderID (Để biết sửa đơn nào)
+            stmt.setInt(1, order.getOrderId());
+
+            // Tham số 2: OrderPrice (Giá mới)
+            stmt.setInt(2, order.getOrderPrice());
+
+            // Tham số 3: Status (Trạng thái mới)
+            stmt.setString(3, order.getStatus());
+
+            // Tham số 4: PaymentID (Thanh toán mới)
+            if (order.getPaymentId() != null && order.getPaymentId() > 0) {
+                stmt.setInt(4, order.getPaymentId());
+            } else {
+                stmt.setNull(4, java.sql.Types.INTEGER);
+            }
+
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi Update Order: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+}
