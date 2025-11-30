@@ -77,4 +77,24 @@ public class OrderDAO {
             return false;
         }
     }
+    /**
+     * DELETE: Xóa đơn hàng
+     * Gọi SP: sp_DeleteOrder(OrderID)
+     */    public boolean deleteOrder(int orderId) {
+        String query = "{CALL sp_DeleteOrder(?)}";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             CallableStatement stmt = conn.prepareCall(query)) {
+
+            // Tham số 1: OrderID (Để biết xóa đơn nào)
+            stmt.setInt(1, orderId);
+
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi Delete Order: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

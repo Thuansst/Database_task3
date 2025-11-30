@@ -11,22 +11,20 @@ import java.awt.event.ActionListener;
 public class OrderForm extends JDialog implements ActionListener {
     // Enum để quản lý chế độ
     public enum Mode {
-        ADD, UPDATE
+        ADD, UPDATE, DELETE
     }
 
     private Mode currentMode = Mode.ADD; // Chế độ mặc định
 
     // Khai báo các biến components
     private JLabel titleLabel;
-    private JLabel orderIdLabel, orderAtLabel, orderPriceLabel, statusLabel, paymentIdLabel, buyerIDLabel;
-    private JTextField orderIdField, orderAtField, orderPriceField, paymentIdField, buyerIDField;
+    private JLabel orderIdLabel, orderPriceLabel, statusLabel, paymentIdLabel, buyerIDLabel;
+    private JTextField orderIdField, orderPriceField, paymentIdField, buyerIDField;
     private JComboBox<String> statusComboBox;
-    private JButton insertButton, updateButton, cancelButton;
-    private JButton switchToAddButton, switchToUpdateButton; // Nút chuyển đổi mode
+    private JButton insertButton, updateButton, cancelButton, deleteButton;
+    private JButton switchToAddButton, switchToUpdateButton, switchToDeleteButton; // Nút chuyển đổi mode
 
     // Font chuẩn đẹp
-    private final Font MAIN_FONT = new Font("Segoe UI", Font.PLAIN, 14);
-    private final Font BOLD_FONT = new Font("Segoe UI", Font.BOLD, 14);
     private final Color PRIMARY_COLOR = new Color(70, 130, 180); // Màu xanh Steel Blue
 
     public OrderForm() {
@@ -46,7 +44,7 @@ public class OrderForm extends JDialog implements ActionListener {
         setLocationRelativeTo(null);
         setModal(true);
         setLayout(null);
-        getContentPane().setBackground(new Color(245, 245, 250)); // Màu nền xám nhẹ hiện đại
+        // getContentPane().setBackground(new Color(245, 245, 250)); // Màu nền xám nhẹ hiện đại
 
         // --- HEADER ---
         JPanel headerPanel = new JPanel();
@@ -62,27 +60,15 @@ public class OrderForm extends JDialog implements ActionListener {
         headerPanel.add(titleLabel);
 
         // Nút chuyển đổi mode
-        switchToAddButton = new JButton("ADD MODE");
-        switchToAddButton.setBounds(200, 65, 150, 40);
-        switchToAddButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        switchToAddButton.setBackground(new Color(46, 204, 113)); // Xanh lá
-        switchToAddButton.setForeground(Color.WHITE);
-        switchToAddButton.setFocusPainted(false);
-        switchToAddButton.setBorderPainted(false);
-        switchToAddButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        switchToAddButton.addActionListener(this);
+        
+        switchToAddButton = createSwitchButton("ADD MODE", 100, 65, new Color(46, 204, 113)); // Xanh lá
         headerPanel.add(switchToAddButton);
 
-        switchToUpdateButton = new JButton("UPDATE MODE");
-        switchToUpdateButton.setBounds(400, 65, 150, 40);
-        switchToUpdateButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        switchToUpdateButton.setBackground(new Color(52, 152, 219)); // Xanh dương
-        switchToUpdateButton.setForeground(Color.WHITE);
-        switchToUpdateButton.setFocusPainted(false);
-        switchToUpdateButton.setBorderPainted(false);
-        switchToUpdateButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        switchToUpdateButton.addActionListener(this);
+        switchToUpdateButton = createSwitchButton("UPDATE MODE", 300, 65, new Color(52, 152, 219)); // Xanh dương
         headerPanel.add(switchToUpdateButton);
+
+        switchToDeleteButton = createSwitchButton("DELETE MODE", 500, 65, new Color(231, 76, 60)); // Đỏ
+        headerPanel.add(switchToDeleteButton);
 
         // --- BODY ---
         int labelX = 50;
@@ -93,20 +79,14 @@ public class OrderForm extends JDialog implements ActionListener {
         int currentY = yStart;
 
         // Buyer ID (chỉ hiện ở ADD mode)
-        buyerIDLabel = new JLabel("Buyer ID:");
-        buyerIDLabel.setBounds(labelX, currentY, 160, 40);
-        buyerIDLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        buyerIDLabel.setForeground(new Color(50, 50, 50));
+        buyerIDLabel = createAndAddLabel("Buyer ID:", labelX, currentY);
         add(buyerIDLabel);
         buyerIDField = createStyledTextField(fieldX, currentY, width, true);
         add(buyerIDField);
         currentY += yGap;
 
-        // Order ID (chỉ hiện ở UPDATE mode)
-        orderIdLabel = new JLabel("Order ID:");
-        orderIdLabel.setBounds(labelX, yStart, 160, 40);
-        orderIdLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        orderIdLabel.setForeground(new Color(50, 50, 50));
+        // Order ID (chỉ hiện ở UPDATE mode)\
+        orderIdLabel = createAndAddLabel("Order ID:", labelX, yStart);
         orderIdLabel.setVisible(false); // Ẩn mặc định
         add(orderIdLabel);
         orderIdField = createStyledTextField(fieldX, yStart, width, true);
@@ -114,13 +94,13 @@ public class OrderForm extends JDialog implements ActionListener {
         add(orderIdField);
 
         // Order Price
-        addLabel(orderPriceLabel, "Order Price:", labelX, currentY);
+        orderPriceLabel = createAndAddLabel("Order Price:", labelX, currentY);
         orderPriceField = createStyledTextField(fieldX, currentY, width, true);
         add(orderPriceField);
         currentY += yGap;
 
         // Status (ComboBox)
-        addLabel(statusLabel, "Status:", labelX, currentY);
+        statusLabel = createAndAddLabel("Status:", labelX, currentY);
         String[] statusOptions = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled"};
         statusComboBox = new JComboBox<>(statusOptions);
         statusComboBox.setBounds(fieldX, currentY, width, 40); // Tăng chiều cao
@@ -129,8 +109,8 @@ public class OrderForm extends JDialog implements ActionListener {
         currentY += yGap;
 
         // Payment ID (nullable)
-        addLabel(paymentIdLabel, "Payment ID:", labelX, currentY);
-        paymentIdField = createStyledTextField(fieldX, currentY, width, false);
+        paymentIdLabel = createAndAddLabel("Payment ID:", labelX, currentY);
+        paymentIdField = createStyledTextField(fieldX, currentY, width, true);
         add(paymentIdField);
         currentY += yGap + 20;
 
@@ -143,6 +123,11 @@ public class OrderForm extends JDialog implements ActionListener {
         updateButton.addActionListener(this);
         updateButton.setVisible(false); // Ẩn mặc định vì đang ở ADD mode
         add(updateButton);
+
+        deleteButton = createStyledButton("Delete Order", new Color(231, 76, 60), 250, currentY);
+        deleteButton.addActionListener(this);
+        deleteButton.setVisible(false); // Ẩn mặc định
+        add(deleteButton);
 
         // Gọi switchMode để thiết lập UI ban đầu
         switchMode(Mode.ADD);
@@ -165,6 +150,14 @@ public class OrderForm extends JDialog implements ActionListener {
             insertButton.setVisible(true);
             updateButton.setVisible(false);
 
+            deleteButton.setVisible(false);
+            paymentIdLabel.setVisible(true);
+            paymentIdField.setVisible(true);
+            statusLabel.setVisible(true);
+            statusComboBox.setVisible(true);
+            orderPriceLabel.setVisible(true);
+            orderPriceField.setVisible(true);
+
             // Highlight nút ADD MODE
             switchToAddButton.setBackground(new Color(46, 204, 113)); // Xanh lá đậm
             switchToUpdateButton.setBackground(new Color(100, 180, 220)); // Xanh dương nhạt
@@ -183,6 +176,14 @@ public class OrderForm extends JDialog implements ActionListener {
             orderIdField.setVisible(true);
             orderIdField.setText("");
 
+            deleteButton.setVisible(false);
+            paymentIdLabel.setVisible(true);
+            paymentIdField.setVisible(true);
+            statusLabel.setVisible(true);
+            statusComboBox.setVisible(true);
+            orderPriceLabel.setVisible(true);
+            orderPriceField.setVisible(true);
+
             // Ẩn nút Insert, hiện nút Update
             insertButton.setVisible(false);
             updateButton.setVisible(true);
@@ -196,18 +197,53 @@ public class OrderForm extends JDialog implements ActionListener {
             paymentIdField.setText("");
             statusComboBox.setSelectedIndex(0);
         }
+        else if (mode == Mode.DELETE) {
+            // DELETE MODE: Ẩn BuyerID, hiện OrderID
+            buyerIDLabel.setVisible(false);
+            buyerIDField.setVisible(false);
+
+            orderIdLabel.setVisible(true);
+            orderIdField.setVisible(true);
+            orderIdField.setText("");
+
+            orderPriceLabel.setVisible(false);
+            orderPriceField.setVisible(false);
+
+            statusLabel.setVisible(false);
+            statusComboBox.setVisible(false);
+
+            paymentIdLabel.setVisible(false);
+            paymentIdField.setVisible(false);
+
+            deleteButton.setVisible(true);
+
+            // Ẩn nút Insert, ẩn nút Update
+            insertButton.setVisible(false);
+            updateButton.setVisible(false);
+
+            // Highlight nút DELETE MODE
+            switchToAddButton.setBackground(new Color(100, 220, 150)); // Xanh lá nhạt
+            switchToUpdateButton.setBackground(new Color(100, 180, 220)); // Xanh dương nhạt
+            switchToDeleteButton.setBackground(new Color(231, 76, 60)); // Đỏ đậm
+
+            // Clear các field
+            orderPriceField.setText("");
+            paymentIdField.setText("");
+            statusComboBox.setSelectedIndex(0);
+        }
     }
 
     // --- CÁC HÀM HỖ TRỢ TRANG TRÍ (HELPER METHODS) ---
 
     // 1. Hàm tạo Label nhanh
-    private void addLabel(JLabel lbl, String text, int x, int y) {
-        lbl = new JLabel(text);
-        lbl.setBounds(x, y, 160, 40); // Tăng kích thước label
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 16)); // Font to hơn
-        lbl.setForeground(new Color(50, 50, 50));
-        add(lbl);
-    }
+    private JLabel createAndAddLabel(String text, int x, int y) { // Đổi tên cho rõ nghĩa
+    JLabel lbl = new JLabel(text);
+    lbl.setBounds(x, y, 160, 40);
+    lbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
+    lbl.setForeground(new Color(50, 50, 50));
+    add(lbl); // Thêm vào form luôn
+    return lbl; // <--- TRẢ VỀ ĐỐI TƯỢNG
+}
 
     // 2. Hàm tạo TextField đẹp
     private JTextField createStyledTextField(int x, int y, int width, boolean editable) {
@@ -234,6 +270,20 @@ public class OrderForm extends JDialog implements ActionListener {
         return btn;
     }
 
+    // 4. Hàm tạo switch button đẹp
+    private JButton createSwitchButton(String text, int x, int y, Color bgColor) {
+        JButton btn = new JButton(text);
+        btn.setBounds(x, y, 140, 40);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setBackground(bgColor);
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(this);
+        return btn;
+    }
+
     @Override
 public void actionPerformed(ActionEvent e) {
     // Xử lý chuyển đổi mode
@@ -244,9 +294,26 @@ public void actionPerformed(ActionEvent e) {
         switchMode(Mode.UPDATE);
         return;
     }
+    else if (e.getSource() == switchToDeleteButton) {
+        switchMode(Mode.DELETE);
+        return;
+    }
 
     // Xử lý Insert Order
     if (e.getSource() == insertButton) {
+        handleInsertOrder();
+    } 
+    // Xử lý Update Order
+    else if (e.getSource() == updateButton) {
+        handleUpdateOrder();
+    }
+}
+
+    // Main để test thử giao diện
+    public static void main(String[] args) {
+        new OrderForm().setVisible(true);
+    }
+    private void handleInsertOrder(){
         try {
             // 1. VALIDATION CƠ BẢN
             // Kiểm tra giá tiền có trống không
@@ -310,7 +377,7 @@ public void actionPerformed(ActionEvent e) {
             OrderDAO orderDAO = new OrderDAO();
             if (orderDAO.insertOrder(order)) {
                 JOptionPane.showMessageDialog(this, "Order inserted successfully!");
-                dispose(); // Đóng form sau khi thêm thành công
+                // dispose(); // Đóng form sau khi thêm thành công
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to insert order. Check Database!", "Database Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -319,8 +386,8 @@ public void actionPerformed(ActionEvent e) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "An unexpected error occurred: " + ex.getMessage());
         }
-
-    } else if (e.getSource() == updateButton) {
+    }
+    private void handleUpdateOrder(){
         try {
             // 1. VALIDATION OrderID
             if (orderIdField.getText().trim().isEmpty()) {
@@ -380,7 +447,7 @@ public void actionPerformed(ActionEvent e) {
             OrderDAO orderDAO = new OrderDAO();
             if (orderDAO.updateOrder(order)) {
                 JOptionPane.showMessageDialog(this, "Order updated successfully!");
-                dispose();
+                // dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to update order. Check Order ID or Database!", "Database Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -390,10 +457,34 @@ public void actionPerformed(ActionEvent e) {
             JOptionPane.showMessageDialog(this, "An unexpected error occurred: " + ex.getMessage());
         }
     }
-}
+    private void handleDeleteOrder(){
+        try {
+            // 1. VALIDATION OrderID
+            if (orderIdField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Order ID cannot be empty!", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
 
-    // Main để test thử giao diện
-    public static void main(String[] args) {
-        new OrderForm().setVisible(true);
+            int orderId;
+            try {
+                orderId = Integer.parseInt(orderIdField.getText().trim());
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Order ID must be a whole number!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 2. Gọi DAO để xóa
+            OrderDAO orderDAO = new OrderDAO();
+            if (orderDAO.deleteOrder(orderId)) {
+                JOptionPane.showMessageDialog(this, "Order deleted successfully!");
+                // dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to delete order. Check Order ID or Database!", "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "An unexpected error occurred: " + ex.getMessage());
+        }
     }
 }
