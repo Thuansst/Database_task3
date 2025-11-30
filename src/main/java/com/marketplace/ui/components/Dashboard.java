@@ -7,6 +7,7 @@ import com.marketplace.dao.OrderDAO;
 import com.marketplace.model.Order;
 import com.marketplace.model.OrderTableModel;
 import com.marketplace.ui.components.OrderForm;
+import com.marketplace.ui.components.OrderForm.Mode;
 
 import java.awt.*;
 import java.util.List;
@@ -189,21 +190,21 @@ public class Dashboard extends JFrame {
      * Thêm order mới 
      */
     private void addOrder() {
-        new OrderForm().setVisible(true);
+        new OrderForm(Mode.ADD).setVisible(true);
     }
     
     /**
      * Sửa order đã chọn 
      */
     private void editOrder() {
-        new OrderForm().setVisible(true);
+        new OrderForm(Mode.UPDATE).setVisible(true);
     }
     
     /**
      * Xóa order đã chọn 
      */
     private void deleteOrder() {
-        new OrderForm().setVisible(true);
+        new OrderForm(Mode.DELETE).setVisible(true);
     }
     
     /**

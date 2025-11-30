@@ -4,6 +4,7 @@ import com.marketplace.config.DatabaseConnection;
 import com.marketplace.model.Order;
 import com.marketplace.model.Product;
 import com.marketplace.ui.components.OrderForm;
+import com.marketplace.ui.components.OrderForm.Mode;
 
 import javax.swing.*;
 
@@ -14,7 +15,7 @@ import javax.swing.*;
 public class MainApp {
 
     public static void main(String[] args) {
-        OrderForm orderForm = new OrderForm();
+        OrderForm orderForm = new OrderForm(Mode.ADD);
         orderForm.setVisible(true);
     }
 

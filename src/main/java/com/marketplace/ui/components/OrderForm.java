@@ -27,7 +27,8 @@ public class OrderForm extends JDialog implements ActionListener {
     // Font chuẩn đẹp
     private final Color PRIMARY_COLOR = new Color(70, 130, 180); // Màu xanh Steel Blue
 
-    public OrderForm() {
+    public OrderForm(Mode mode) {
+        this.currentMode = mode;
         // 1. CÀI ĐẶT LOOK AND FEEL (NIMBUS)
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
@@ -130,7 +131,7 @@ public class OrderForm extends JDialog implements ActionListener {
         add(deleteButton);
 
         // Gọi switchMode để thiết lập UI ban đầu
-        switchMode(Mode.ADD);
+        switchMode(currentMode);
     }
 
     // Phương thức chuyển đổi giữa ADD và UPDATE mode
@@ -311,7 +312,7 @@ public void actionPerformed(ActionEvent e) {
 
     // Main để test thử giao diện
     public static void main(String[] args) {
-        new OrderForm().setVisible(true);
+        new OrderForm(Mode.ADD).setVisible(true);
     }
     private void handleInsertOrder(){
         try {
