@@ -1,6 +1,9 @@
 package com.marketplace.model;
 
 import java.sql.Timestamp;
+
+import javax.swing.table.AbstractTableModel;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +11,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+
+
 public class Order {
     private int orderId;          // Primary Key
     private int buyerId;          // <-- THÊM CÁI NÀY (Foreign Key bắt buộc)
@@ -16,3 +21,4 @@ public class Order {
     private String status;        // Trạng thái
     private Integer paymentId;    // Payment (có thể Null nên dùng Integer)
 }
+
