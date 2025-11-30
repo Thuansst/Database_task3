@@ -102,7 +102,9 @@ public class OrderForm extends JDialog implements ActionListener {
 
         // Status (ComboBox)
         statusLabel = createAndAddLabel("Status:", labelX, currentY);
-        String[] statusOptions = {"Pending", "Processing", "Shipped", "Delivered", "Cancelled"};
+        String[] statusOptions = {"Placed", "Preparing to Ship", "In Transit", "Out for Delivery", 
+            "Delivered", "Completed", "Disputed", "Return Processing", 
+            "Return Completed", "Refunded", "Cancelled", "Pending"};
         statusComboBox = new JComboBox<>(statusOptions);
         statusComboBox.setBounds(fieldX, currentY, width, 40); // Tăng chiều cao
         statusComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Font to hơn

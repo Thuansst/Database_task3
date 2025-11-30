@@ -19,7 +19,7 @@ public class DatabaseConnection {
     // Thông tin kết nối database - có thể config từ file properties
     private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/marketplace";
     private static final String DEFAULT_USER = "root";
-    private static final String DEFAULT_PASSWORD = "";
+    private static final String DEFAULT_PASSWORD = "0909480911aA@";
 
     // Connection object
     private Connection connection;
