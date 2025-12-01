@@ -13,7 +13,7 @@ public class OrderDAO {
      */
     public boolean insertOrder(Order order) {
         // Câu lệnh gọi Stored Procedure trong MySQL
-        String query = "{CALL sp_InsertOrder(?, ?, ?, ?)}";
+        String query = "{CALL sp_CreateOrder(?, ?, ?, ?, ?, ?)}";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              CallableStatement stmt = conn.prepareCall(query)) {
@@ -21,18 +21,23 @@ public class OrderDAO {
             // Tham số 1: BuyerID (Lấy từ model)
             stmt.setInt(1, order.getBuyerId());
 
-            // Tham số 2: OrderPrice
-            stmt.setInt(2, order.getOrderPrice());
+            // tham số 2: OrderAt (Lấy thời gian hiện tại)
+            stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
 
-            // Tham số 3: Status
-            stmt.setString(3, order.getStatus());
+            // Tham số 3: OrderPrice
+            stmt.setInt(3, order.getOrderPrice());
 
-            // Tham số 4: PaymentID (Xử lý trường hợp null)
+            // Tham số 4: Status
+            stmt.setString(4, order.getStatus());
+
+            // Tham số 5: PaymentID (Xử lý trường hợp null)
             if (order.getPaymentId() != null && order.getPaymentId() > 0) {
-                stmt.setInt(4, order.getPaymentId());
+                stmt.setInt(5, order.getPaymentId());
             } else {
-                stmt.setNull(4, java.sql.Types.INTEGER);
+                stmt.setNull(5, java.sql.Types.INTEGER);
             }
+
+            stmt.registerOutParameter(6, java.sql.Types.INTEGER);
 
             // Thực thi lệnh. Nếu số dòng bị ảnh hưởng > 0 là thành công
             return stmt.executeUpdate() > 0;

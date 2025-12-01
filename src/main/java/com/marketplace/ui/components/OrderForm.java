@@ -310,6 +310,10 @@ public void actionPerformed(ActionEvent e) {
     else if (e.getSource() == updateButton) {
         handleUpdateOrder();
     }
+    // Xử lý Delete Order
+    else if (e.getSource() == deleteButton) {
+        handleDeleteOrder();
+    }
 }
 
     // Main để test thử giao diện
