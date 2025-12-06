@@ -2,26 +2,29 @@ package com.marketplace.model;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
-import com.marketplace.model.Order;
+import com.marketplace.model.*;
 
 public class OrderTableModel extends AbstractTableModel {
 
-    private List<Order> orders;
+    private List<OrderList> orderList;
     private String[] columnNames = 
     {"Order ID",
-     "Buyer ID",
      "Order At",
      "Order Price",
+     "Tax Amount",
      "Status",
-     "Payment ID"}; 
+     "Buyer ID",
+     "Buyer Name",
+     "Buyer Email",
+     "Payment Status",}; 
     
-    public OrderTableModel(List<Order> orders){
-        this.orders = orders;
+    public OrderTableModel(List<OrderList> orderList){
+        this.orderList = orderList;
     }
     
     @Override
     public int getRowCount(){
-        return orders.size();
+        return orderList.size();
     }
 
     @Override
@@ -36,20 +39,26 @@ public class OrderTableModel extends AbstractTableModel {
     
     @Override
     public Object getValueAt(int rowIndex, int columnIndex){
-        Order order = orders.get(rowIndex);
+        OrderList order = orderList.get(rowIndex);
         switch (columnIndex) {
             case 0:
-                return order.getOrderId();
+                return order.getOrderID();
             case 1:
-                return order.getBuyerId();
-            case 2:
                 return order.getOrderAt();
-            case 3:
+            case 2:
                 return order.getOrderPrice();
+            case 3:
+                return order.getTaxAmount();
             case 4:
                 return order.getStatus();
             case 5:
-                return order.getPaymentId();
+                return order.getBuyerID();
+            case 6:
+                return order.getBuyerName();
+            case 7:
+                return order.getBuyerEmail();
+            case 8:
+                return order.getPaymentStatus();
             default:
                 return null;
         }

@@ -84,37 +84,6 @@ public class OrderDAO {
         }
     }
 
-    public List<Order> getOrders(String keyword){
-        
-        List<Order> orders = new ArrayList<Order>();
-        String query = "{call sp_GetOrders(?)}";
-
-        try(Connection conn = DatabaseConnection.getInstance().getConnection();
-            CallableStatement stmt = conn.prepareCall(query);
-            ResultSet rs = stmt.executeQuery();){
-
-            while(rs.next()){
-                Order order = new Order();
-                order.setOrderId(rs.getInt("OrderID"));
-                order.setBuyerId(rs.getInt("BuyerID"));
-                order.setOrderAt(rs.getTimestamp("OrderAt"));
-                order.setOrderPrice(rs.getInt("OrderPrice"));
-                order.setStatus(rs.getString("Status"));
-                int paymentId = rs.getInt("PaymentID");
-                if(rs.wasNull()){
-                    order.setPaymentId(null);
-                } else {
-                    order.setPaymentId(paymentId);
-                }
-                orders.add(order);
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Lỗi lấy danh sách đơn hàng: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return orders;
-    }
     /**
      * DELETE: Xóa đơn hàng
      * Gọi SP: sp_DeleteOrder(OrderID)
