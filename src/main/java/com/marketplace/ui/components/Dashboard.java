@@ -34,7 +34,6 @@ public class Dashboard extends JFrame {
         initComponents();
         setupLayout();
         loadOrders(""); // Load tất cả orders khi khởi động
-        
         setTitle("Order Management Dashboard");
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

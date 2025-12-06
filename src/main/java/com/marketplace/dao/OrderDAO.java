@@ -11,41 +11,34 @@ public class OrderDAO {
      * INSERT: Thêm mới đơn hàng
      * Gọi SP: sp_InsertOrder(BuyerID, OrderPrice, Status, PaymentID)
      */
-    public boolean insertOrder(Order order) {
-        // Câu lệnh gọi Stored Procedure trong MySQL
-        String query = "{CALL sp_CreateOrder(?, ?, ?, ?, ?, ?)}";
+    public void insertOrder(Order order) throws SQLException {
+        // Cập nhật query khớp với SP mới: IN BuyerID, IN OrderAt, IN OrderPrice, OUT NewOrderID
+        String query = "{CALL sp_CreateOrder(?, ?, ?, ?)}";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              CallableStatement stmt = conn.prepareCall(query)) {
 
-            // Tham số 1: BuyerID (Lấy từ model)
+            // Tham số 1: BuyerID
             stmt.setInt(1, order.getBuyerId());
 
-            // tham số 2: OrderAt (Lấy thời gian hiện tại)
+            // Tham số 2: OrderAt (Thời gian hiện tại)
             stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
 
             // Tham số 3: OrderPrice
-            stmt.setInt(3, order.getOrderPrice());
+            stmt.setBigDecimal(3, order.getOrderPrice());
 
-            // Tham số 4: Status
-            stmt.setString(4, order.getStatus());
+            // Tham số 4: NewOrderID (OUT)
+            stmt.registerOutParameter(4, java.sql.Types.INTEGER);
 
-            // Tham số 5: PaymentID (Xử lý trường hợp null)
-            if (order.getPaymentId() != null && order.getPaymentId() > 0) {
-                stmt.setInt(5, order.getPaymentId());
-            } else {
-                stmt.setNull(5, java.sql.Types.INTEGER);
-            }
+            // Thực thi lệnh
+            stmt.execute();
 
-            stmt.registerOutParameter(6, java.sql.Types.INTEGER);
-
-            // Thực thi lệnh. Nếu số dòng bị ảnh hưởng > 0 là thành công
-            return stmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Lỗi Insert Order: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+            // Lấy ID đơn hàng vừa tạo
+            int newOrderId = stmt.getInt(4);
+            order.setOrderId(newOrderId);
+            
+            // Cập nhật lại status mặc định để hiển thị trên UI nếu cần
+            order.setStatus("Draft"); 
         }
     }
 
@@ -63,7 +56,7 @@ public class OrderDAO {
             stmt.setInt(1, order.getOrderId());
 
             // Tham số 2: OrderPrice (Giá mới)
-            stmt.setInt(2, order.getOrderPrice());
+            stmt.setBigDecimal(2, order.getOrderPrice());
 
             // Tham số 3: Status (Trạng thái mới)
             stmt.setString(3, order.getStatus());
@@ -87,7 +80,7 @@ public class OrderDAO {
     public List<Order> getOrders(String keyword){
         
         List<Order> orders = new ArrayList<Order>();
-        String query = "{call sp_GetOrders(?)}";
+        String query = "SELECT * from `Order`";
 
         try(Connection conn = DatabaseConnection.getInstance().getConnection();
             CallableStatement stmt = conn.prepareCall(query);
@@ -98,7 +91,7 @@ public class OrderDAO {
                 order.setOrderId(rs.getInt("OrderID"));
                 order.setBuyerId(rs.getInt("BuyerID"));
                 order.setOrderAt(rs.getTimestamp("OrderAt"));
-                order.setOrderPrice(rs.getInt("OrderPrice"));
+                order.setOrderPrice(rs.getBigDecimal("OrderPrice"));
                 order.setStatus(rs.getString("Status"));
                 int paymentId = rs.getInt("PaymentID");
                 if(rs.wasNull()){
@@ -115,12 +108,30 @@ public class OrderDAO {
         }
         return orders;
     }
+    public boolean isBuyerValid(int buyerId) {
+        String query = "SELECT COUNT(*) FROM Buyer WHERE UserID = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, buyerId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error checking buyer validity: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     /**
      * DELETE: Xóa đơn hàng
      * Gọi SP: sp_DeleteOrder(OrderID)
      */    public boolean deleteOrder(int orderId) {
         String query = "{CALL sp_DeleteOrder(?)}";
-
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              CallableStatement stmt = conn.prepareCall(query)) {
 

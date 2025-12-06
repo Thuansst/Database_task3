@@ -2,7 +2,7 @@ package com.marketplace.model;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.List;
-import com.marketplace.model.Order;
+// import com.marketplace.model.Order;
 
 public class OrderTableModel extends AbstractTableModel {
 

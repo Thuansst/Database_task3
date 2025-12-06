@@ -7,6 +7,7 @@ import com.marketplace.model.Order;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.math.BigDecimal;
 
 public class OrderForm extends JDialog implements ActionListener {
     // Enum để quản lý chế độ
@@ -330,10 +331,10 @@ public void actionPerformed(ActionEvent e) {
             }
 
             // 2. CHUYỂN ĐỔI DỮ LIỆU (PARSING)
-            int price;
+            BigDecimal price;
             try {
-                price = Integer.parseInt(orderPriceField.getText().trim());
-                if (price < 0) {
+                price = new BigDecimal(orderPriceField.getText().trim());
+                if (price.compareTo(BigDecimal.ZERO) < 0) {
                     JOptionPane.showMessageDialog(this, "Price cannot be negative!", "Validation Error", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
@@ -382,12 +383,8 @@ public void actionPerformed(ActionEvent e) {
 
             // 5. GỌI DAO
             OrderDAO orderDAO = new OrderDAO();
-            if (orderDAO.insertOrder(order)) {
-                JOptionPane.showMessageDialog(this, "Order inserted successfully!");
-                // dispose(); // Đóng form sau khi thêm thành công
-            } else {
-                JOptionPane.showMessageDialog(this, "Failed to insert order. Check Database!", "Database Error", JOptionPane.ERROR_MESSAGE);
-            }
+            orderDAO.insertOrder(order);
+            JOptionPane.showMessageDialog(this, "Order inserted successfully!");
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -416,10 +413,10 @@ public void actionPerformed(ActionEvent e) {
                 return;
             }
 
-            int price;
+            BigDecimal price;
             try {
-                price = Integer.parseInt(orderPriceField.getText().trim());
-                if (price < 0) {
+                price = new BigDecimal(orderPriceField.getText().trim());
+                if (price.compareTo(BigDecimal.ZERO) < 0) {
                     JOptionPane.showMessageDialog(this, "Price cannot be negative!", "Validation Error", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
