@@ -1,13 +1,24 @@
 package com.marketplace.ui.components;
-import javax.swing.*;
-
-import com.marketplace.dao.OrderDAO;
-import com.marketplace.model.Order;
-
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+
+import com.marketplace.dao.OrderDAO;
+import com.marketplace.model.Order;
 
 public class OrderForm extends JDialog implements ActionListener {
     // Enum để quản lý chế độ
@@ -101,13 +112,14 @@ public class OrderForm extends JDialog implements ActionListener {
         add(orderPriceField);
         currentY += yGap;
 
-        // Status (ComboBox)
-        statusLabel = createAndAddLabel("Status:", labelX, currentY);
+        // Status (ComboBox) - sẽ hiện ở vị trí dưới Order ID trong UPDATE mode
+        statusLabel = createAndAddLabel("Status:", labelX, yStart + yGap);
+        statusLabel.setVisible(true); // Mặc định hiện
         String[] statusOptions = {"Placed", "Preparing to Ship", "In Transit", "Out for Delivery", 
             "Delivered", "Completed", "Disputed", "Return Processing", 
             "Return Completed", "Refunded", "Cancelled", "Pending"};
         statusComboBox = new JComboBox<>(statusOptions);
-        statusComboBox.setBounds(fieldX, currentY, width, 40); // Tăng chiều cao
+        statusComboBox.setBounds(fieldX, yStart + yGap, width, 40); // Đặt ngay dưới Order ID
         statusComboBox.setFont(new Font("Segoe UI", Font.PLAIN, 16)); // Font to hơn
         add(statusComboBox);
         currentY += yGap;
@@ -172,7 +184,7 @@ public class OrderForm extends JDialog implements ActionListener {
             statusComboBox.setSelectedIndex(0);
 
         } else if (mode == Mode.UPDATE) {
-            // UPDATE MODE: Ẩn BuyerID, hiện OrderID
+            // UPDATE MODE: Chỉ hiện OrderID và Status
             buyerIDLabel.setVisible(false);
             buyerIDField.setVisible(false);
 
@@ -180,13 +192,17 @@ public class OrderForm extends JDialog implements ActionListener {
             orderIdField.setVisible(true);
             orderIdField.setText("");
 
-            deleteButton.setVisible(false);
-            paymentIdLabel.setVisible(true);
-            paymentIdField.setVisible(true);
+            // Ẩn Order Price và Payment ID
+            orderPriceLabel.setVisible(false);
+            orderPriceField.setVisible(false);
+            paymentIdLabel.setVisible(false);
+            paymentIdField.setVisible(false);
+
+            // Chỉ hiện Status
             statusLabel.setVisible(true);
             statusComboBox.setVisible(true);
-            orderPriceLabel.setVisible(true);
-            orderPriceField.setVisible(true);
+
+            deleteButton.setVisible(false);
 
             // Ẩn nút Insert, hiện nút Update
             insertButton.setVisible(false);
@@ -292,7 +308,7 @@ public class OrderForm extends JDialog implements ActionListener {
 public void actionPerformed(ActionEvent e) {
     // Xử lý chuyển đổi mode
     if (e.getSource() == switchToAddButton) {
-        switchMode(Mode.ADD);
+        new BuyerView().setVisible(true);
         return;
     } else if (e.getSource() == switchToUpdateButton) {
         switchMode(Mode.UPDATE);
@@ -407,50 +423,23 @@ public void actionPerformed(ActionEvent e) {
                 return;
             }
 
-            // 2. VALIDATION OrderPrice
-            if (orderPriceField.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Order Price cannot be empty!", "Validation Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+            // 2. Lấy status từ combobox
+            String newStatus = (String) statusComboBox.getSelectedItem();
 
-            BigDecimal price;
-            try {
-                price = new BigDecimal(orderPriceField.getText().trim());
-                if (price.compareTo(BigDecimal.ZERO) < 0) {
-                    JOptionPane.showMessageDialog(this, "Price cannot be negative!", "Validation Error", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Price must be a valid number!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // 3. Xử lý Payment ID (nullable)
-            Integer paymentId = null;
-            String payIdText = paymentIdField.getText().trim();
-            if (!payIdText.isEmpty()) {
-                try {
-                    paymentId = Integer.parseInt(payIdText);
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Payment ID must be a whole number!", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            }
-
-            // 4. Tạo đối tượng Order để update
+            // 3. Tạo đối tượng Order để update (chỉ update status)
             Order order = new Order(
                 orderId,                // orderId: Lấy từ field
                 0,                      // buyerId: Không cần update (để 0)
                 null,                   // orderAt: Không update timestamp
-                price,                  // orderPrice: Giá mới
-                (String) statusComboBox.getSelectedItem(), // status: Trạng thái mới
-                paymentId               // paymentId: Có thể null
+                null,                   // orderPrice: Không update (để null)
+                newStatus,              // status: Trạng thái mới từ combobox
+                null                    // paymentId: Không update (để null)
             );
 
-            // 5. Gọi DAO để update
+            // 4. Gọi DAO để update
             OrderDAO orderDAO = new OrderDAO();
             if (orderDAO.updateOrder(order)) {
-                JOptionPane.showMessageDialog(this, "Order updated successfully!");
+                JOptionPane.showMessageDialog(this, "Order status updated successfully!");
                 // dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to update order. Check Order ID or Database!", "Database Error", JOptionPane.ERROR_MESSAGE);

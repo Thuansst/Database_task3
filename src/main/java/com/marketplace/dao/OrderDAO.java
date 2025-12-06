@@ -1,10 +1,16 @@
 package com.marketplace.dao;
 
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.marketplace.config.DatabaseConnection;
 import com.marketplace.model.Order;
-import java.sql.*;
-
-import java.util.*;
 public class OrderDAO {
 
     /**
@@ -44,10 +50,11 @@ public class OrderDAO {
 
     /**
      * UPDATE: Cập nhật đơn hàng
-     * Gọi SP: sp_UpdateOrder(OrderID, OrderPrice, Status, PaymentID)
+     * Gọi SP: sp_UpdateOrder(OrderID, OrderPrice, Status) - 3 parameters
+     * Note: PaymentID is internally managed by the stored procedure
      */
     public boolean updateOrder(Order order) {
-        String query = "{CALL sp_UpdateOrder(?, ?, ?, ?)}";
+        String query = "{CALL sp_UpdateOrder(?, ?, ?)}";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              CallableStatement stmt = conn.prepareCall(query)) {
@@ -55,17 +62,18 @@ public class OrderDAO {
             // Tham số 1: OrderID (Để biết sửa đơn nào)
             stmt.setInt(1, order.getOrderId());
 
-            // Tham số 2: OrderPrice (Giá mới)
-            stmt.setBigDecimal(2, order.getOrderPrice());
+            // Tham số 2: OrderPrice (Giá - chỉ update được khi Status = Draft)
+            if (order.getOrderPrice() != null) {
+                stmt.setBigDecimal(2, order.getOrderPrice());
+            } else {
+                stmt.setNull(2, java.sql.Types.DECIMAL);
+            }
 
             // Tham số 3: Status (Trạng thái mới)
-            stmt.setString(3, order.getStatus());
-
-            // Tham số 4: PaymentID (Thanh toán mới)
-            if (order.getPaymentId() != null && order.getPaymentId() > 0) {
-                stmt.setInt(4, order.getPaymentId());
+            if (order.getStatus() != null) {
+                stmt.setString(3, order.getStatus());
             } else {
-                stmt.setNull(4, java.sql.Types.INTEGER);
+                stmt.setNull(3, java.sql.Types.VARCHAR);
             }
 
             return stmt.executeUpdate() > 0;
@@ -144,6 +152,39 @@ public class OrderDAO {
             System.err.println("Lỗi Delete Order: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * ADD ORDER ITEM: Thêm sản phẩm vào đơn hàng
+     * Gọi SP: sp_AddOrderItem(OrderID, VariantID, ProductID, Quantity, OUT OrderItemID)
+     */
+    public int addOrderItem(int orderId, int variantId, int productId, int quantity) throws SQLException {
+        String query = "{CALL sp_AddOrderItem(?, ?, ?, ?, ?)}";
+        
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             CallableStatement stmt = conn.prepareCall(query)) {
+            
+            // Tham số 1: OrderID
+            stmt.setInt(1, orderId);
+            
+            // Tham số 2: VariantID
+            stmt.setInt(2, variantId);
+            
+            // Tham số 3: ProductID
+            stmt.setInt(3, productId);
+            
+            // Tham số 4: Quantity
+            stmt.setInt(4, quantity);
+            
+            // Tham số 5: OrderItemID (OUT)
+            stmt.registerOutParameter(5, java.sql.Types.INTEGER);
+            
+            // Thực thi lệnh
+            stmt.execute();
+            
+            // Lấy OrderItemID vừa tạo
+            return stmt.getInt(5);
         }
     }
 }

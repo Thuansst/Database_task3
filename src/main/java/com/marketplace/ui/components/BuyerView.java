@@ -50,8 +50,8 @@ public class BuyerView extends JFrame {
     private OrderDAO orderDAO;
     private JTextField txtBuyerId; // New field for Buyer ID
     
-    // Shopping cart: variantId -> {name, price, quantity}
-    private Map<Integer, CartItem> shoppingCart;
+    // Shopping cart: "productId_variantId" -> {name, price, quantity}
+    private Map<String, CartItem> shoppingCart;
     
     public BuyerView() {
         shoppingCart = new HashMap<>();
@@ -71,7 +71,7 @@ public class BuyerView extends JFrame {
         northPanel.setBackground(new Color(52, 152, 219));
         northPanel.setBorder(new EmptyBorder(20, 10, 20, 10));
         
-        lblTitle = new JLabel("Buyer UI");
+        lblTitle = new JLabel("BK");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 28));
         lblTitle.setForeground(Color.WHITE);
         northPanel.add(lblTitle, BorderLayout.WEST);
@@ -226,8 +226,8 @@ public class BuyerView extends JFrame {
         btnAddToCart.setFocusPainted(false);
         btnAddToCart.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
-        // Use Variant ID and actual Price
-        btnAddToCart.addActionListener(e -> addToCart(product.getVariantId(), product.getDisplayName(), product.getPrice().doubleValue()));
+        // Use Variant ID, Product ID and actual Price
+        btnAddToCart.addActionListener(e -> addToCart(product.getVariantId(), product.getProductId(), product.getDisplayName(), product.getPrice().doubleValue()));
         
         infoPanel.add(Box.createVerticalStrut(5));
         infoPanel.add(lblName);
@@ -244,7 +244,7 @@ public class BuyerView extends JFrame {
         return card;
     }
     
-    private void addToCart(int productId, String productName, double price) {
+    private void addToCart(int variantId, int productId, String productName, double price) {
         // Ask for quantity
         SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, -100, 100, 1); // Changed min to -100 to test validation
         JSpinner quantitySpinner = new JSpinner(spinnerModel);
@@ -274,12 +274,22 @@ public class BuyerView extends JFrame {
                 return;
             }
             
-            if (shoppingCart.containsKey(productId)) {
-                CartItem item = shoppingCart.get(productId);
+            // Create composite key: productId_variantId
+            String cartKey = productId + "_" + variantId;
+            
+            System.out.println("DEBUG addToCart: CartKey=" + cartKey + ", ProductID=" + productId + 
+                             ", VariantID=" + variantId + ", Name=" + productName + ", Quantity=" + quantity);
+            
+            if (shoppingCart.containsKey(cartKey)) {
+                System.out.println("DEBUG: Item " + cartKey + " already exists in cart. Adding quantity.");
+                CartItem item = shoppingCart.get(cartKey);
                 item.quantity += quantity;
             } else {
-                shoppingCart.put(productId, new CartItem(productName, price, quantity));
+                System.out.println("DEBUG: Adding new item " + cartKey + " to cart.");
+                shoppingCart.put(cartKey, new CartItem(variantId, productId, productName, price, quantity));
             }
+            
+            System.out.println("DEBUG: Cart now has " + shoppingCart.size() + " unique items");
             
             updateCartButton();
             JOptionPane.showMessageDialog(this,
@@ -325,7 +335,7 @@ public class BuyerView extends JFrame {
         
         // Populate table
         double total = 0;
-        for (Map.Entry<Integer, CartItem> entry : shoppingCart.entrySet()) {
+        for (Map.Entry<String, CartItem> entry : shoppingCart.entrySet()) {
             CartItem item = entry.getValue();
             double subtotal = item.price * item.quantity;
             total += subtotal;
@@ -448,9 +458,15 @@ public class BuyerView extends JFrame {
         }
         
         // Calculate total
-        double total = shoppingCart.values().stream()
+        double subtotal = shoppingCart.values().stream()
             .mapToDouble(item -> item.price * item.quantity)
             .sum();
+        
+        // Calculate tax (8%)
+        double tax = subtotal * 0.08;
+        
+        // Calculate total with tax
+        double total = subtotal + tax;
         
         int totalItems = shoppingCart.values().stream()
             .mapToInt(item -> item.quantity)
@@ -466,6 +482,8 @@ public class BuyerView extends JFrame {
         }
         
         orderSummary.append(String.format("\nTotal Items: %d\n", totalItems));
+        orderSummary.append(String.format("Subtotal: $%.2f\n", subtotal));
+        orderSummary.append(String.format("Tax (8%%): $%.2f\n", tax));
         orderSummary.append(String.format("Total Amount: $%.2f\n\n", total));
         orderSummary.append("Confirm order?");
         
@@ -479,17 +497,50 @@ public class BuyerView extends JFrame {
             Order newOrder = new Order();
             newOrder.setBuyerId(buyerId);
             newOrder.setOrderPrice(java.math.BigDecimal.valueOf(total)); // Model uses BigDecimal
-            newOrder.setStatus("Pending");
             newOrder.setPaymentId(null); // No payment selection implemented yet
             
             // Insert into DB
             try {
+                // Step 1: Create the Order with Draft status (sp_CreateOrder sets it to Draft automatically)
                 orderDAO.insertOrder(newOrder);
+                int orderId = newOrder.getOrderId();
                 
-                JOptionPane.showMessageDialog(this,
-                    "Order placed successfully for Buyer " + buyerId + "!\nOrder ID: " + newOrder.getOrderId() + "\nTotal: $" + String.format("%.2f", total),
-                    "Success",
-                    JOptionPane.INFORMATION_MESSAGE);
+                // Step 2: Add all items from cart to OrderItem table
+                boolean allItemsAdded = true;
+                StringBuilder errorMessages = new StringBuilder();
+                
+                System.out.println("DEBUG: Shopping cart has " + shoppingCart.size() + " items");
+                
+                for (CartItem item : shoppingCart.values()) {
+                    try {
+                        System.out.println("DEBUG: Adding OrderItem - VariantID: " + item.variantId + 
+                                         ", ProductID: " + item.productId + 
+                                         ", Quantity: " + item.quantity + 
+                                         ", Name: " + item.name);
+                        
+                        int orderItemId = orderDAO.addOrderItem(orderId, item.variantId, item.productId, item.quantity);
+                        
+                        System.out.println("DEBUG: Successfully added OrderItem with ID: " + orderItemId);
+                    } catch (java.sql.SQLException e) {
+                        allItemsAdded = false;
+                        System.err.println("DEBUG: Failed to add item " + item.name + ": " + e.getMessage());
+                        errorMessages.append("- ").append(item.name).append(": ").append(e.getMessage()).append("\n");
+                    }
+                }
+                
+                if (!allItemsAdded) {
+                    // Some items failed to add
+                    JOptionPane.showMessageDialog(this,
+                        "Order created but some items could not be added:\n" + errorMessages.toString(),
+                        "Partial Success",
+                        JOptionPane.WARNING_MESSAGE);
+                } else {
+                    // All items added successfully - Order remains in Draft status
+                    JOptionPane.showMessageDialog(this,
+                        "Order placed successfully for Buyer " + buyerId + "!\nOrder ID: " + orderId + "\nTotal: $" + String.format("%.2f", total) + "\nStatus: Draft",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+                }
                 
                 // Clear cart after successful order
                 shoppingCart.clear();
@@ -510,11 +561,15 @@ public class BuyerView extends JFrame {
     
     // Inner class for cart items
     private static class CartItem {
+        int variantId;
+        int productId;
         String name;
         double price;
         int quantity;
         
-        CartItem(String name, double price, int quantity) {
+        CartItem(int variantId, int productId, String name, double price, int quantity) {
+            this.variantId = variantId;
+            this.productId = productId;
             this.name = name;
             this.price = price;
             this.quantity = quantity;
