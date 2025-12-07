@@ -136,6 +136,41 @@ public class OrderDAO {
     }
 
     /**
+     * GET ORDER BY ID: Lấy thông tin order theo OrderID
+     */
+    public Order getOrderById(int orderId) throws SQLException {
+        String query = "SELECT * FROM `Order` WHERE OrderID = ?";
+        
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            
+            stmt.setInt(1, orderId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Order order = new Order();
+                    order.setOrderId(rs.getInt("OrderID"));
+                    order.setBuyerId(rs.getInt("BuyerID"));
+                    order.setOrderAt(rs.getTimestamp("OrderAt"));
+                    order.setOrderPrice(rs.getBigDecimal("OrderPrice"));
+                    order.setStatus(rs.getString("Status"));
+                    
+                    int paymentId = rs.getInt("PaymentID");
+                    if (rs.wasNull()) {
+                        order.setPaymentId(null);
+                    } else {
+                        order.setPaymentId(paymentId);
+                    }
+                    
+                    return order;
+                }
+            }
+        }
+        
+        return null; // Order not found
+    }
+
+    /**
      * DELETE: Xóa đơn hàng
      * Gọi SP: sp_DeleteOrder(OrderID)
      */    public boolean deleteOrder(int orderId) {

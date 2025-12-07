@@ -55,7 +55,7 @@ public class OrderForm extends JDialog implements ActionListener {
         setTitle("Order Management");
         setSize(750, 700); // Tăng chiều rộng lên 750
         setLocationRelativeTo(null);
-        setModal(true);
+        // setModal(true);
         setLayout(null);
         // getContentPane().setBackground(new Color(245, 245, 250)); // Màu nền xám nhẹ hiện đại
 
@@ -308,7 +308,7 @@ public class OrderForm extends JDialog implements ActionListener {
 public void actionPerformed(ActionEvent e) {
     // Xử lý chuyển đổi mode
     if (e.getSource() == switchToAddButton) {
-        new BuyerView().setVisible(true);
+        BuyerView.getInstance().setVisible(true);
         return;
     } else if (e.getSource() == switchToUpdateButton) {
         switchMode(Mode.UPDATE);
@@ -439,7 +439,22 @@ public void actionPerformed(ActionEvent e) {
             // 4. Gọi DAO để update
             OrderDAO orderDAO = new OrderDAO();
             if (orderDAO.updateOrder(order)) {
-                JOptionPane.showMessageDialog(this, "Order status updated successfully!");
+                // Lấy lại thông tin Order sau khi update để lấy PaymentID (nếu có)
+                try {
+                    Order updatedOrder = orderDAO.getOrderById(orderId);
+                    
+                    String successMessage = "Order status updated successfully!\nOrder ID: " + orderId + "\nNew Status: " + newStatus;
+                    
+                    // Nếu có PaymentID (khi chuyển từ Draft sang Pending), hiển thị PaymentID
+                    if (updatedOrder != null && updatedOrder.getPaymentId() != null) {
+                        successMessage += "\nPayment ID: " + updatedOrder.getPaymentId();
+                    }
+                    
+                    JOptionPane.showMessageDialog(this, successMessage, "Success", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception e) {
+                    // Nếu không lấy được Order, vẫn hiển thị thông báo thành công cơ bản
+                    JOptionPane.showMessageDialog(this, "Order status updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                }
                 // dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to update order. Check Order ID or Database!", "Database Error", JOptionPane.ERROR_MESSAGE);

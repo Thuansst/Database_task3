@@ -496,7 +496,7 @@ public class Dashboard extends JFrame {
      * Thêm order mới 
      */
     private void addOrder() {
-        new BuyerView().setVisible(true);
+        BuyerView.getInstance().setVisible(true);
     }
     
     /**
@@ -505,10 +505,11 @@ public class Dashboard extends JFrame {
     private void editOrder() {
         int selectedRow = orderTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Please select an order to edit.",
-                "No Selection",
-                JOptionPane.WARNING_MESSAGE);
+            // JOptionPane.showMessageDialog(this,
+            //     "Please select an order to edit.",
+            //     "No Selection",
+            //     JOptionPane.WARNING_MESSAGE);
+            new OrderForm(Mode.UPDATE).setVisible(true);
             return;
         }
         new OrderForm(Mode.UPDATE).setVisible(true);
@@ -520,10 +521,11 @@ public class Dashboard extends JFrame {
     private void deleteOrder() {
         int selectedRow = orderTable.getSelectedRow();
         if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Please select an order to delete.",
-                "No Selection",
-                JOptionPane.WARNING_MESSAGE);
+            // JOptionPane.showMessageDialog(this,
+            //     "Please select an order to delete.",
+            //     "No Selection",
+            //     JOptionPane.WARNING_MESSAGE);
+            new OrderForm(Mode.DELETE).setVisible(true);
             return;
         }
         

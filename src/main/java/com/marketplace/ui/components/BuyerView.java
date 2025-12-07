@@ -53,7 +53,7 @@ public class BuyerView extends JFrame {
     // Shopping cart: "productId_variantId" -> {name, price, quantity}
     private Map<String, CartItem> shoppingCart;
     
-    public BuyerView() {
+    private BuyerView() {
         shoppingCart = new HashMap<>();
         orderDAO = new OrderDAO(); // Initialize DAO
         initComponents();
@@ -61,6 +61,14 @@ public class BuyerView extends JFrame {
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
+    }
+    public static BuyerView instance;
+    
+    public static BuyerView getInstance() {
+        if (instance == null) {
+            instance = new BuyerView();
+        }
+        return instance;
     }
     
     private void initComponents() {
