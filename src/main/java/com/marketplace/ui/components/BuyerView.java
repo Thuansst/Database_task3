@@ -285,19 +285,12 @@ public class BuyerView extends JFrame {
             // Create composite key: productId_variantId
             String cartKey = productId + "_" + variantId;
             
-            System.out.println("DEBUG addToCart: CartKey=" + cartKey + ", ProductID=" + productId + 
-                             ", VariantID=" + variantId + ", Name=" + productName + ", Quantity=" + quantity);
-            
             if (shoppingCart.containsKey(cartKey)) {
-                System.out.println("DEBUG: Item " + cartKey + " already exists in cart. Adding quantity.");
                 CartItem item = shoppingCart.get(cartKey);
                 item.quantity += quantity;
             } else {
-                System.out.println("DEBUG: Adding new item " + cartKey + " to cart.");
                 shoppingCart.put(cartKey, new CartItem(variantId, productId, productName, price, quantity));
             }
-            
-            System.out.println("DEBUG: Cart now has " + shoppingCart.size() + " unique items");
             
             updateCartButton();
             JOptionPane.showMessageDialog(this,
@@ -517,21 +510,11 @@ public class BuyerView extends JFrame {
                 boolean allItemsAdded = true;
                 StringBuilder errorMessages = new StringBuilder();
                 
-                System.out.println("DEBUG: Shopping cart has " + shoppingCart.size() + " items");
-                
                 for (CartItem item : shoppingCart.values()) {
                     try {
-                        System.out.println("DEBUG: Adding OrderItem - VariantID: " + item.variantId + 
-                                         ", ProductID: " + item.productId + 
-                                         ", Quantity: " + item.quantity + 
-                                         ", Name: " + item.name);
-                        
-                        int orderItemId = orderDAO.addOrderItem(orderId, item.variantId, item.productId, item.quantity);
-                        
-                        System.out.println("DEBUG: Successfully added OrderItem with ID: " + orderItemId);
+                        orderDAO.addOrderItem(orderId, item.variantId, item.productId, item.quantity);
                     } catch (java.sql.SQLException e) {
                         allItemsAdded = false;
-                        System.err.println("DEBUG: Failed to add item " + item.name + ": " + e.getMessage());
                         errorMessages.append("- ").append(item.name).append(": ").append(e.getMessage()).append("\n");
                     }
                 }

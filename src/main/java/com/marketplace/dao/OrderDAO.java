@@ -53,7 +53,7 @@ public class OrderDAO {
      * Gọi SP: sp_UpdateOrder(OrderID, OrderPrice, Status) - 3 parameters
      * Note: PaymentID is internally managed by the stored procedure
      */
-    public boolean updateOrder(Order order) {
+    public boolean updateOrder(Order order) throws SQLException {
         String query = "{CALL sp_UpdateOrder(?, ?, ?)}";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
@@ -76,16 +76,12 @@ public class OrderDAO {
                 stmt.setNull(3, java.sql.Types.VARCHAR);
             }
 
-            return stmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Lỗi Update Order: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+            stmt.execute();
+            return true;
         }
     }
 
-    public List<Order> getOrders(String keyword){
+    public List<Order> getOrders(String keyword) throws SQLException {
         
         List<Order> orders = new ArrayList<Order>();
         String query = "SELECT * from `Order`";
@@ -111,7 +107,7 @@ public class OrderDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy danh sách đơn hàng: " + e.getMessage());
+            System.err.println("Error fetching orders: " + e.getMessage());
             e.printStackTrace();
         }
         return orders;
@@ -173,7 +169,8 @@ public class OrderDAO {
     /**
      * DELETE: Xóa đơn hàng
      * Gọi SP: sp_DeleteOrder(OrderID)
-     */    public boolean deleteOrder(int orderId) {
+     */    
+    public boolean deleteOrder(int orderId) throws SQLException {
         String query = "{CALL sp_DeleteOrder(?)}";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              CallableStatement stmt = conn.prepareCall(query)) {
@@ -181,12 +178,8 @@ public class OrderDAO {
             // Tham số 1: OrderID (Để biết xóa đơn nào)
             stmt.setInt(1, orderId);
 
-            return stmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Lỗi Delete Order: " + e.getMessage());
-            e.printStackTrace();
-            return false;
+            stmt.execute();
+            return true;
         }
     }
 
