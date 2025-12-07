@@ -15,7 +15,7 @@ import com.marketplace.model.ProductViewModel;
 
 public class ProductDAO {
 
-    public List<ProductViewModel> getAllProductVariants() throws SQLException {
+    public List<ProductViewModel> getAllProductVariants() {
         List<ProductViewModel> products = new ArrayList<>();
         Map<Integer, ProductViewModel> productMap = new HashMap<>(); // Track unique ProductIDs
         
@@ -57,7 +57,7 @@ public class ProductDAO {
         return products;
     }
 
-    public List<Product> getAllProducts() throws SQLException {
+    public List<Product> getAllProducts() {
         List<Product> products = new ArrayList<>();
         String query = "SELECT * FROM Product"; 
         
